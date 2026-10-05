@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>समग्र प्रगती पत्रक (HPC) - महाराष्ट्र</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Mukta', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        .print-only {
+            display: none;
+        }
+
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            body {
+                background: white;
+                font-size: 12pt;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            
+            /* A4 Page Layout Setup */
+            .a4-page {
+                width: 210mm;
+                min-height: 297mm;
+                padding: 20mm;
+                margin: 0;
+                box-sizing: border-box;
+                page-break-after: always;
+                background: white;
+                position: relative;
+            }
+            .a4-page:last-child {
+                page-break-after: auto;
+            }
+
+            /* Decorative border for printed pages */
+            .page-border {
+                position: absolute;
+                top: 10mm; left: 10mm; right: 10mm; bottom: 10mm;
+                border: 2px solid #1e3a8a;
+                border-radius: 8px;
+                pointer-events: none;
+            }
+
+            table { page-break-inside: auto; }
+            tr    { page-break-inside: avoid; page-break-after: auto; }
+            
+            /* Hide the main app container during print, show only print template */
+            #app-container { display: none !important; }
+            #print-container { display: block !important; }
+        }
+
+        /* Styling for the print container preview on screen (hidden by default, shown via JS if needed, but primarily used only during actual printing) */
+        #print-container {
+            display: none;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center bg-blue-50">
+        <div class="bg-white p-8 rounded-xl shadow-lg max-w-md w-full text-center">
+            <img src="https://placehold.co/100x100/1e3a8a/ffffff?text=HPC" alt="Logo" class="mx-auto mb-4 rounded-full">
+            <h1 class="text-2xl font-bold text-blue-900 mb-2">समग्र प्रगती पत्रक (HPC)</h1>
+            <p class="text-gray-500 mb-6">शिक्षक लॉगिन पोर्टल</p>
+            
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-left text-sm font-medium text-gray-700 mb-1">यू-डायस (U-DISE) क्रमांक</label>
+                    <input type="text" id="udise-input" placeholder="उदा. 12345678901" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                    <p class="text-xs text-left text-gray-400 mt-1">लॉगिन करण्यासाठी '12345678901' वापरा.</p>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                    लॉग इन करा
+                </button>
+                <p id="login-error" class="text-red-500 text-sm hidden mt-2">चुकीचा U-DISE क्रमांक. कृपया पुन्हा प्रयत्न करा.</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Container (Hidden initially) -->
+    <div id="app-container" class="hidden min-h-screen">
+        <!-- Top Navigation -->
+        <nav class="bg-blue-800 text-white shadow-md sticky top-0 z-10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16 items-center">
+                    <div class="flex items-center space-x-3">
+                        <span class="font-bold text-xl tracking-wider">HPC पोर्टल</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <select id="student-selector" class="bg-blue-700 text-white border border-blue-600 rounded-md py-1 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-white">
+                            <option value="">विद्यार्थी निवडा...</option>
+                            <option value="1">आर्यन पाटील (इयत्ता ५ वी)</option>
+                            <option value="2">समीक्षा देशमुख (इयत्ता ५ वी)</option>
+                        </select>
+                        <button onclick="generatePDF()" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md font-semibold text-sm flex items-center shadow-sm transition">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            Generate PDF
+                        </button>
+                        <button onclick="logout()" class="text-sm bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-md transition">लॉग आउट</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content (Form) -->
+        <main class="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+            <div id="welcome-message" class="text-center py-20">
+                <h2 class="text-3xl font-bold text-gray-400">कृपया माहिती भरण्यासाठी वरून विद्यार्थी निवडा.</h2>
+            </div>
+
+            <div id="data-entry-form" class="hidden space-y-6">
+                <!-- Section 1: Personal Details -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold text-blue-800 border-b pb-2 mb-4">वैयक्तिक माहिती (Personal Details)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">विद्यार्थ्याचे पूर्ण नाव</label>
+                            <input type="text" id="stu-name" class="mt-1 w-full p-2 border rounded-md" placeholder="नाव">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">जन्म तारीख</label>
+                            <input type="date" id="stu-dob" class="mt-1 w-full p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">इयत्ता / तुकडी</label>
+                            <input type="text" id="stu-class" class="mt-1 w-full p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">स्टुडंट आयडी (Student ID)</label>
+                            <input type="text" id="stu-id" class="mt-1 w-full p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">आईचे नाव</label>
+                            <input type="text" id="stu-mother" class="mt-1 w-full p-2 border rounded-md">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2 & 3: Attendance & Physical Growth -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Attendance -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-bold text-blue-800 border-b pb-2 mb-4">हजेरी (Attendance)</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-semibold text-gray-600 mb-2">सत्र १ (Term 1)</h4>
+                                <label class="block text-sm text-gray-500">एकूण कामाचे दिवस</label>
+                                <input type="number" id="att-t1-total" class="mt-1 mb-2 w-full p-2 border rounded-md">
+                                <label class="block text-sm text-gray-500">उपस्थित दिवस</label>
+                                <input type="number" id="att-t1-present" class="mt-1 w-full p-2 border rounded-md">
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-600 mb-2">सत्र २ (Term 2)</h4>
+                                <label class="block text-sm text-gray-500">एकूण कामाचे दिवस</label>
+                                <input type="number" id="att-t2-total" class="mt-1 mb-2 w-full p-2 border rounded-md">
+                                <label class="block text-sm text-gray-500">उपस्थित दिवस</label>
+                                <input type="number" id="att-t2-present" class="mt-1 w-full p-2 border rounded-md">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Physical Growth -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-bold text-blue-800 border-b pb-2 mb-4">शारीरिक प्रगती (Physical Growth)</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-semibold text-gray-600 mb-2">सत्र १ (Term 1)</h4>
+                                <label class="block text-sm text-gray-500">उंची (cm)</label>
+                                <input type="number" id="ht-t1" class="mt-1 mb-2 w-full p-2 border rounded-md">
+                                <label class="block text-sm text-gray-500">वजन (kg)</label>
+                                <input type="number" id="wt-t1" class="mt-1 w-full p-2 border rounded-md">
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-600 mb-2">सत्र २ (Term 2)</h4>
+                                <label class="block text-sm text-gray-500">उंची (cm)</label>
+                                <input type="number" id="ht-t2" class="mt-1 mb-2 w-full p-2 border rounded-md">
+                                <label class="block text-sm text-gray-500">वजन (kg)</label>
+                                <input type="number" id="wt-t2" class="mt-1 w-full p-2 border rounded-md">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: 12 Domains Assessment -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center border-b pb-2 mb-4">
+                        <h3 class="text-lg font-bold text-blue-800">१२ विकास क्षेत्रांचे मूल्यांकन</h3>
+                        <span class="text-sm bg-yellow-100 text-yellow-800 px-2 py-1 rounded">स्तर: निर्झर (Beginning), पर्वत (Developing), आकाश (Advanced)</span>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="p-3 border-b font-medium text-gray-600">विकास क्षेत्र (Domain)</th>
+                                    <th class="p-3 border-b font-medium text-gray-600 w-1/4">सत्र १ स्तर</th>
+                                    <th class="p-3 border-b font-medium text-gray-600 w-1/4">सत्र २ स्तर</th>
+                                </tr>
+                            </thead>
+                            <tbody id="domains-table-body">
+                                <!-- Generated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section 5: Remarks & Feedback -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold text-blue-800 border-b pb-2 mb-4">३६०° अभिप्राय आणि शेरे</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">स्वतःचे मत (Self Assessment)</label>
+                            <textarea id="rem-self" rows="3" class="w-full p-2 border rounded-md"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">मित्राचे मत (Peer Assessment)</label>
+                            <textarea id="rem-peer" rows="3" class="w-full p-2 border rounded-md"></textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">वर्गशिक्षकांचा शेरा (Teacher's Remarks)</label>
+                            <textarea id="rem-teacher" rows="3" class="w-full p-2 border rounded-md"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Button (Simulated) -->
+                <div class="flex justify-end">
+                    <button type="button" onclick="saveData()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium shadow transition">
+                        माहिती जतन करा (Save)
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ================= PRINT CONTAINER (16-Page Structure Simulated) ================= -->
+    <div id="print-container">
+        <!-- PAGE 1: Cover Page -->
+        <div class="a4-page flex flex-col justify-center items-center text-center">
+            <div class="page-border"></div>
+            <img src="https://placehold.co/150x150/1e3a8a/ffffff?text=Emblem" alt="Emblem" class="mb-8 rounded-full">
+            <h1 class="text-4xl font-bold text-blue-900 mb-4">समग्र प्रगती पत्रक</h1>
+            <h2 class="text-2xl text-gray-700 mb-12">Holistic Progress Card (HPC)</h2>
+            <div class="text-xl mb-4 text-left w-2/3 mx-auto border-b pb-2">
+                <span class="font-bold">विद्यार्थ्याचे नाव:</span> <span id="print-name" class="text-blue-800"></span>
+            </div>
+            <div class="text-xl mb-4 text-left w-2/3 mx-auto border-b pb-2">
+                <span class="font-bold">इयत्ता:</span> <span id="print-class"></span>
+            </div>
+            <div class="text-xl mb-4 text-left w-2/3 mx-auto border-b pb-2">
+                <span class="font-bold">शाळेचे नाव:</span> <span>जिल्हा परिषद प्राथमिक शाळा, महाराष्ट्र</span>
+            </div>
+            <div class="text-xl mb-4 text-left w-2/3 mx-auto border-b pb-2">
+                <span class="font-bold">शैक्षणिक वर्ष:</span> <span>२०२६-२७</span>
+            </div>
+            
+            <div class="mt-20 text-gray-500">
+                (ही १६ पानांची सर्वसमावेशक प्रगतीपुस्तिका आहे)
+            </div>
+        </div>
+
+        <!-- PAGE 2: Personal Details & Physical Growth -->
+        <div class="a4-page">
+            <div class="page-border"></div>
+            <h2 class="text-2xl font-bold text-center bg-blue-100 p-2 rounded mb-8">भाग १: विद्यार्थी प्रोफाइल आणि प्रगती</h2>
+            
+            <table class="w-full mb-8 border-collapse border border-gray-400">
+                <tr><th colspan="2" class="bg-gray-200 border border-gray-400 p-2 text-left">वैयक्तिक माहिती</th></tr>
+                <tr>
+                    <td class="border border-gray-400 p-2 w-1/2"><b>जन्म तारीख:</b> <span id="print-dob"></span></td>
+                    <td class="border border-gray-400 p-2 w-1/2"><b>स्टुडंट आयडी:</b> <span id="print-id"></span></td>
+                </tr>
+                <tr>
+                    <td class="border border-gray-400 p-2" colspan="2"><b>आईचे नाव:</b> <span id="print-mother"></span></td>
+                </tr>
+            </table>
+
+            <table class="w-full mb-8 border-collapse border border-gray-400 text-center">
+                <tr><th colspan="5" class="bg-gray-200 border border-gray-400 p-2 text-left">हजेरी व शारीरिक प्रगती</th></tr>
+                <tr class="bg-gray-100">
+                    <th class="border border-gray-400 p-2">सत्र</th>
+                    <th class="border border-gray-400 p-2">एकूण दिवस</th>
+                    <th class="border border-gray-400 p-2">उपस्थिती</th>
+                    <th class="border border-gray-400 p-2">उंची (cm)</th>
+                    <th class="border border-gray-400 p-2">वजन (kg)</th>
+                </tr>
+                <tr>
+                    <td class="border border-gray-400 p-2">सत्र १</td>
+                    <td class="border border-gray-400 p-2" id="print-att-t1-tot"></td>
+                    <td class="border border-gray-400 p-2" id="print-att-t1-pres"></td>
+                    <td class="border border-gray-400 p-2" id="print-ht-t1"></td>
+                    <td class="border border-gray-400 p-2" id="print-wt-t1"></td>
+                </tr>
+                <tr>
+                    <td class="border border-gray-400 p-2">सत्र २</td>
+                    <td class="border border-gray-400 p-2" id="print-att-t2-tot"></td>
+                    <td class="border border-gray-400 p-2" id="print-att-t2-pres"></td>
+                    <td class="border border-gray-400 p-2" id="print-ht-t2"></td>
+                    <td class="border border-gray-400 p-2" id="print-wt-t2"></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- PAGE 3: Assessment Domains (Simulating multi-page detailed assessment) -->
+        <div class="a4-page">
+            <div class="page-border"></div>
+            <h2 class="text-2xl font-bold text-center bg-blue-100 p-2 rounded mb-6">भाग २: विकास क्षेत्रांचे मूल्यांकन (१ ते ६)</h2>
+            <p class="mb-4 text-sm"><b>स्तरांची माहिती:</b> १. निर्झर (सुरुवात) | २. पर्वत (प्रगतीपथावर) | ३. आकाश (प्रगत)</p>
+            
+            <table class="w-full border-collapse border border-gray-400">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="border border-gray-400 p-3 text-left">विकास क्षेत्र</th>
+                        <th class="border border-gray-400 p-3 text-center w-32">सत्र १</th>
+                        <th class="border border-gray-400 p-3 text-center w-32">सत्र २</th>
+                    </tr>
+                </thead>
+                <tbody id="print-domains-page1">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PAGE 4: Assessment Domains Continuation -->
+        <div class="a4-page">
+            <div class="page-border"></div>
+            <h2 class="text-2xl font-bold text-center bg-blue-100 p-2 rounded mb-6">भाग २: विकास क्षेत्रांचे मूल्यांकन (७ ते १२)</h2>
+            
+            <table class="w-full border-collapse border border-gray-400 mb-10">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="border border-gray-400 p-3 text-left">विकास क्षेत्र</th>
+                        <th class="border border-gray-400 p-3 text-center w-32">सत्र १</th>
+                        <th class="border border-gray-400 p-3 text-center w-32">सत्र २</th>
+                    </tr>
+                </thead>
+                <tbody id="print-domains-page2">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+            
+            <h2 class="text-xl font-bold text-left bg-gray-100 p-2 rounded mb-4 mt-8">भाग ३: ३६०° अभिप्राय आणि शेरे</h2>
+            <div class="border border-gray-400 p-4 mb-4 rounded">
+                <h4 class="font-bold mb-2">स्वतःचे मत (Self Assessment):</h4>
+                <p id="print-rem-self" class="text-gray-700 italic min-h-[50px]"></p>
+            </div>
+            <div class="border border-gray-400 p-4 mb-4 rounded">
+                <h4 class="font-bold mb-2">मित्राचे मत (Peer Assessment):</h4>
+                <p id="print-rem-peer" class="text-gray-700 italic min-h-[50px]"></p>
+            </div>
+            <div class="border border-gray-400 p-4 rounded mb-12">
+                <h4 class="font-bold mb-2">वर्गशिक्षकांचा शेरा (Teacher's Remarks):</h4>
+                <p id="print-rem-teacher" class="text-gray-700 italic min-h-[50px]"></p>
+            </div>
+            
+            <div class="flex justify-between mt-20 px-10">
+                <div class="text-center">
+                    <div class="border-b border-gray-800 w-40 mb-2"></div>
+                    <b>वर्गशिक्षक</b>
+                </div>
+                <div class="text-center">
+                    <div class="border-b border-gray-800 w-40 mb-2"></div>
+                    <b>मुख्याध्यापक</b>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Note: A full 16-page PDF would continue with similar .a4-page divs for detailed art, sports, portfolio evidence pages, etc. For demonstration, these 4 pages represent the complete flow and structure. -->
+    </div>
+
+    <script>
+        // Data Structures
+        const domains = [
+            "१. भाषिक विकास (Language Development)",
+            "२. संख्यात्मक विकास (Cognitive/Math)",
+            "३. स्थूल स्नायू विकास (Gross Motor Skills)",
+            "४. सूक्ष्म स्नायू विकास (Fine Motor Skills)",
+            "५. सामाजिक विकास (Social Development)",
+            "६. भावनिक विकास (Emotional Development)",
+            "७. सृजनशीलता (Creativity)",
+            "८. कला आणि संस्कृती (Art & Culture)",
+            "९. पर्यावरण जागरूकता (Environmental Awareness)",
+            "१०. आरोग्य आणि स्वच्छता (Health & Hygiene)",
+            "११. वैज्ञानिक दृष्टिकोन (Scientific Temper)",
+            "१२. तंत्रज्ञान साक्षरता (Tech Literacy)"
+        ];
+
+        const levels = [
+            { value: "", text: "निवडा..." },
+            { value: "निर्झर", text: "निर्झर (Beginning)" },
+            { value: "पर्वत", text: "पर्वत (Developing)" },
+            { value: "आकाश", text: "आकाश (Advanced)" }
+        ];
+
+        const dummyStudents = {
+            "1": {
+                name: "आर्यन पाटील", dob: "2015-06-12", class: "इयत्ता ५ वी", id: "20152712345", mother: "सुनीता पाटील",
+                attT1T: "120", attT1P: "115", attT2T: "110", attT2P: "105",
+                htT1: "135", wtT1: "30", htT2: "138", wtT2: "32",
+                remSelf: "मला चित्र काढायला खूप आवडते. गणितात प्रगती करायची आहे.",
+                remPeer: "आर्यन खेळात खूप चांगला आहे आणि नेहमी मदत करतो.",
+                remTeacher: "आर्यन हुशार व गुणी विद्यार्थी आहे. त्याने वाचनावर थोडे अधिक लक्ष केंद्रित करावे."
+            },
+            "2": {
+                name: "समीक्षा देशमुख", dob: "2015-08-24", class: "इयत्ता ५ वी", id: "20152754321", mother: "अंजली देशमुख",
+                attT1T: "120", attT1P: "118", attT2T: "110", attT2P: "110",
+                htT1: "140", wtT1: "35", htT2: "142", wtT2: "36",
+                remSelf: "मला गोष्टी वाचायला आवडतात. विज्ञानाचे प्रयोग करायला आवडतात.",
+                remPeer: "समीक्षा छान गाणी म्हणते.",
+                remTeacher: "समीक्षा सर्व विषयात उत्कृष्ट आहे. तिच्या अंगी नेतृत्वगुण आहेत."
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDomainsTable();
+
+            // Login Logic
+            document.getElementById('login-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const udise = document.getElementById('udise-input').value;
+                if(udise === '12345678901') {
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('app-container').classList.remove('hidden');
+                } else {
+                    document.getElementById('login-error').classList.remove('hidden');
+                }
+            });
+
+            // Student Selection Logic
+            document.getElementById('student-selector').addEventListener('change', (e) => {
+                const val = e.target.value;
+                if(val) {
+                    document.getElementById('welcome-message').classList.add('hidden');
+                    document.getElementById('data-entry-form').classList.remove('hidden');
+                    populateForm(dummyStudents[val]);
+                } else {
+                    document.getElementById('welcome-message').classList.remove('hidden');
+                    document.getElementById('data-entry-form').classList.add('hidden');
+                }
+            });
+        });
+
+        function renderDomainsTable() {
+            const tbody = document.getElementById('domains-table-body');
+            
+            let optionsHTML = levels.map(l => `<option value="${l.value}">${l.text}</option>`).join('');
+
+            domains.forEach((domain, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b hover:bg-blue-50";
+                tr.innerHTML = `
+                    <td class="p-3 text-sm text-gray-700">${domain}</td>
+                    <td class="p-3">
+                        <select id="dom-t1-${index}" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-blue-500">
+                            ${optionsHTML}
+                        </select>
+                    </td>
+                    <td class="p-3">
+                        <select id="dom-t2-${index}" class="w-full p-2 border border-gray-300 rounded text-sm focus:ring-blue-500">
+                            ${optionsHTML}
+                        </select>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function populateForm(data) {
+            document.getElementById('stu-name').value = data.name;
+            document.getElementById('stu-dob').value = data.dob;
+            document.getElementById('stu-class').value = data.class;
+            document.getElementById('stu-id').value = data.id;
+            document.getElementById('stu-mother').value = data.mother;
+            
+            document.getElementById('att-t1-total').value = data.attT1T;
+            document.getElementById('att-t1-present').value = data.attT1P;
+            document.getElementById('att-t2-total').value = data.attT2T;
+            document.getElementById('att-t2-present').value = data.attT2P;
+            
+            document.getElementById('ht-t1').value = data.htT1;
+            document.getElementById('wt-t1').value = data.wtT1;
+            document.getElementById('ht-t2').value = data.htT2;
+            document.getElementById('wt-t2').value = data.wtT2;
+
+            document.getElementById('rem-self').value = data.remSelf;
+            document.getElementById('rem-peer').value = data.remPeer;
+            document.getElementById('rem-teacher').value = data.remTeacher;
+
+            // Randomize domains for dummy data effect
+            const sampleLevels = ["निर्झर", "पर्वत", "आकाश"];
+            domains.forEach((_, i) => {
+                document.getElementById(`dom-t1-${i}`).value = sampleLevels[Math.floor(Math.random() * 2) + 1]; // Mostly developing/advanced
+                document.getElementById(`dom-t2-${i}`).value = "आकाश"; // Assuming progress in term 2
+            });
+        }
+
+        function logout() {
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('udise-input').value = '';
+            document.getElementById('student-selector').value = '';
+            document.getElementById('welcome-message').classList.remove('hidden');
+            document.getElementById('data-entry-form').classList.add('hidden');
+        }
+
+        function saveData() {
+            // Simulated Save UI
+            const btn = document.querySelector('button[onclick="saveData()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "जतन केले! ✔";
+            btn.classList.add('bg-green-600');
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('bg-green-600');
+            }, 2000);
+        }
+
+        function generatePDF() {
+            const studentId = document.getElementById('student-selector').value;
+            if(!studentId) {
+                alert("कृपया प्रथम विद्यार्थी निवडा.");
+                return;
+            }
+
+            // Map inputs to print template
+            document.getElementById('print-name').innerText = document.getElementById('stu-name').value || '-';
+            document.getElementById('print-class').innerText = document.getElementById('stu-class').value || '-';
+            document.getElementById('print-dob').innerText = document.getElementById('stu-dob').value || '-';
+            document.getElementById('print-id').innerText = document.getElementById('stu-id').value || '-';
+            document.getElementById('print-mother').innerText = document.getElementById('stu-mother').value || '-';
+
+            document.getElementById('print-att-t1-tot').innerText = document.getElementById('att-t1-total').value || '-';
+            document.getElementById('print-att-t1-pres').innerText = document.getElementById('att-t1-present').value || '-';
+            document.getElementById('print-att-t2-tot').innerText = document.getElementById('att-t2-total').value || '-';
+            document.getElementById('print-att-t2-pres').innerText = document.getElementById('att-t2-present').value || '-';
+
+            document.getElementById('print-ht-t1').innerText = document.getElementById('ht-t1').value || '-';
+            document.getElementById('print-wt-t1').innerText = document.getElementById('wt-t1').value || '-';
+            document.getElementById('print-ht-t2').innerText = document.getElementById('ht-t2').value || '-';
+            document.getElementById('print-wt-t2').innerText = document.getElementById('wt-t2').value || '-';
+
+            document.getElementById('print-rem-self').innerText = document.getElementById('rem-self').value || '-';
+            document.getElementById('print-rem-peer').innerText = document.getElementById('rem-peer').value || '-';
+            document.getElementById('print-rem-teacher').innerText = document.getElementById('rem-teacher').value || '-';
+
+            // Populate domains for print (splitting across 2 pages)
+            const p1 = document.getElementById('print-domains-page1');
+            const p2 = document.getElementById('print-domains-page2');
+            p1.innerHTML = ''; p2.innerHTML = '';
+
+            domains.forEach((domain, i) => {
+                const t1 = document.getElementById(`dom-t1-${i}`).value || '-';
+                const t2 = document.getElementById(`dom-t2-${i}`).value || '-';
+                
+                const row = `
+                    <tr>
+                        <td class="border border-gray-400 p-2 text-sm">${domain}</td>
+                        <td class="border border-gray-400 p-2 text-center text-sm">${t1}</td>
+                        <td class="border border-gray-400 p-2 text-center text-sm">${t2}</td>
+                    </tr>
+                `;
+                
+                if(i < 6) p1.innerHTML += row;
+                else p2.innerHTML += row;
+            });
+
+            // Trigger browser print dialog
+            window.print();
+        }
+    </script>
+</body>
+</html>
