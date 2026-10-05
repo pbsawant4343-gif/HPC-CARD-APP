@@ -522,16 +522,33 @@
             document.getElementById('data-entry-form').classList.add('hidden');
         }
 
-        function saveData() {
-            // Simulated Save UI
+       function saveData() {
+            // तुमची गुगल शीटची लिंक इथे योग्य प्रकारे सेट केली आहे
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbympdIXw48sJGtg4wnRPYqfux0b9NNlZ-2qOvxrpXkvI1UvWkL9-nwV6vEw-t6nRYp2/exec';
+            
             const btn = document.querySelector('button[onclick="saveData()"]');
             const originalText = btn.innerHTML;
-            btn.innerHTML = "जतन केले! ✔";
-            btn.classList.add('bg-green-600');
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.classList.remove('bg-green-600');
-            }, 2000);
+            btn.innerHTML = "सेव्ह होत आहे... ⏳";
+            
+            const formData = new FormData();
+            formData.append('studentName', document.getElementById('stu-name').value);
+            formData.append('studentClass', document.getElementById('stu-class').value);
+            formData.append('term', 'Term 1'); 
+            formData.append('domain1', document.getElementById('rem-teacher').value);
+            
+            fetch(scriptURL, { method: 'POST', body: formData})
+                .then(response => {
+                    btn.innerHTML = "जतन केले! ✔";
+                    btn.classList.add('bg-green-600');
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.classList.remove('bg-green-600');
+                    }, 3000);
+                })
+                .catch(error => {
+                    alert("माहिती सेव्ह करताना त्रुटी आली: " + error.message);
+                    btn.innerHTML = originalText;
+                });
         }
 
         function generatePDF() {
@@ -562,7 +579,7 @@
             document.getElementById('print-rem-peer').innerText = document.getElementById('rem-peer').value || '-';
             document.getElementById('print-rem-teacher').innerText = document.getElementById('rem-teacher').value || '-';
 
-            // Populate domains for print (splitting across 2 pages)
+            // Populate domains for print
             const p1 = document.getElementById('print-domains-page1');
             const p2 = document.getElementById('print-domains-page2');
             p1.innerHTML = ''; p2.innerHTML = '';
@@ -585,7 +602,7 @@
 
             // Trigger browser print dialog
             window.print();
-        }https://script.google.com/macros/s/AKfycbympdIXw48sJGtg4wnRPYqfux0b9NNlZ-2qOvxrpXkvI1UvWkL9-nwV6vEw-t6nRYp2/exec
+        }
     </script>
 </body>
 </html>
